@@ -1,5 +1,17 @@
+# Virtual Environment
 venv/
+.venv/
+
+# Python
 __pycache__/
 *.pyc
+
+# Environment Variables
 .env
+
+# Database (optional, if you don't want to commit it)
 *.db
+
+# IDE
+.vscode/
+.idea/

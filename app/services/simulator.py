@@ -78,63 +78,95 @@ def simulate():
 
     for truck in vehicles:
 
-        # --------------------------
-        # Vehicle movement
-        # --------------------------
+        # ====================================================
+        # Vehicle Movement
+        # ====================================================
 
         truck["lat"] += random.uniform(-0.0008, 0.0008)
         truck["lon"] += random.uniform(-0.0008, 0.0008)
 
+        # Keep trucks around Kochi
+        truck["lat"] = max(9.98, min(10.09, truck["lat"]))
+        truck["lon"] = max(76.23, min(76.39, truck["lon"]))
+
+        # ====================================================
+        # Speed
+        # ====================================================
+
         truck["speed"] += random.randint(-2, 2)
-        truck["speed"] = max(30, min(80, truck["speed"]))
+        truck["speed"] = max(35, min(80, truck["speed"]))
+
+        # ====================================================
+        # Humidity
+        # ====================================================
 
         truck["humidity"] += random.randint(-1, 1)
         truck["humidity"] = max(50, min(75, truck["humidity"]))
 
-        # --------------------------
-        # Random refrigeration failure
-        # --------------------------
+        # ====================================================
+        # Refrigeration Failure Simulation
+        # ====================================================
 
         if not truck["fault"]:
 
-            # Around 2% chance of failure each cycle
+            # ~2% chance refrigeration fails
             if random.random() < 0.02:
                 truck["fault"] = True
 
-        # --------------------------
-        # Temperature behaviour
-        # --------------------------
+        else:
 
-        if truck["fault"]:
-
-            # Temperature rises while refrigeration is faulty
-            truck["temperature"] += random.uniform(0.25, 0.6)
-
-            # Around 5% chance the fault gets fixed
+            # ~5% chance technician fixes it
             if random.random() < 0.05:
                 truck["fault"] = False
 
+        # ====================================================
+        # Temperature Behaviour
+        # ====================================================
+
+        if truck["fault"]:
+
+            # Temperature rises continuously
+            truck["temperature"] += random.uniform(0.25, 0.60)
+
         else:
 
-            # Cooling system tries to maintain ~5°C
-            ideal = 5.0
+            # Cooling system pulls temperature back toward 5°C
+            target = 5.0
 
             truck["temperature"] += (
-                (ideal - truck["temperature"]) * 0.15
+                (target - truck["temperature"]) * 0.15
             )
 
             truck["temperature"] += random.uniform(-0.08, 0.08)
 
-        # Safety limits
         truck["temperature"] = round(
-            max(2, min(15, truck["temperature"])),
-            2
+            max(2.0, min(15.0, truck["temperature"])),
+            2,
         )
 
-        # Save telemetry
+        # ====================================================
+        # Fleet Status
+        # ====================================================
+
+        if truck["temperature"] >= 8:
+            truck["status"] = "CRITICAL"
+
+        elif truck["temperature"] >= 6:
+            truck["status"] = "WARNING"
+
+        else:
+            truck["status"] = "SAFE"
+
+        # ====================================================
+        # Save Telemetry
+        # ====================================================
+
         save_telemetry(truck)
 
-        # Alert service decides status
+        # ====================================================
+        # Generate Alerts
+        # ====================================================
+
         check_alert(truck)
 
     return vehicles
