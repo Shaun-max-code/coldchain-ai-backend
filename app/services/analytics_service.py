@@ -3,83 +3,83 @@ from sqlalchemy import func
 from app.db.database import SessionLocal
 from app.models.vehicle import Vehicle
 from app.models.telemetry import Telemetry
-from app.models.alert import Alert
 
 
 def get_dashboard_stats():
 
     db = SessionLocal()
 
-    active_vehicles = db.query(Vehicle).count()
+    try:
 
-    telemetry_records = db.query(Telemetry).count()
+        active_vehicles = db.query(Vehicle).count()
 
-    critical_alerts = (
-        db.query(Alert)
-        .filter(Alert.severity == "Critical")
-        .count()
-    )
+        telemetry_records = db.query(Telemetry).count()
 
-    warning_alerts = (
-        db.query(Alert)
-        .filter(Alert.severity == "Warning")
-        .count()
-    )
+        # Count alerts directly from vehicle status
+        critical_alerts = (
+            db.query(Vehicle)
+            .filter(Vehicle.status == "CRITICAL")
+            .count()
+        )
 
-    avg_temp = (
-        db.query(func.avg(Telemetry.temperature))
-        .scalar()
-    )
+        warning_alerts = (
+            db.query(Vehicle)
+            .filter(Vehicle.status == "WARNING")
+            .count()
+        )
 
-    max_temp = (
-        db.query(func.max(Telemetry.temperature))
-        .scalar()
-    )
+        avg_temp = (
+            db.query(func.avg(Telemetry.temperature))
+            .scalar()
+        )
 
-    # ----------------------------------------
-    # Fleet Health
-    # ----------------------------------------
+        max_temp = (
+            db.query(func.max(Telemetry.temperature))
+            .scalar()
+        )
 
-    latest = (
-        db.query(Telemetry)
-        .order_by(Telemetry.id.desc())
-        .limit(active_vehicles)
-        .all()
-    )
+        # Latest telemetry for fleet health
+        latest = (
+            db.query(Telemetry)
+            .order_by(Telemetry.id.desc())
+            .limit(active_vehicles)
+            .all()
+        )
 
-    score = 0
+        score = 0
 
-    for t in latest:
+        for t in latest:
 
-        if t.temperature < 6:
-            score += 100
+            if t.temperature < 6:
+                score += 100
 
-        elif t.temperature < 8:
-            score += 60
+            elif t.temperature < 8:
+                score += 60
 
-        else:
-            score += 0
+            else:
+                score += 0
 
-    fleet_health = 0
+        fleet_health = 0
 
-    if active_vehicles > 0:
-        fleet_health = round(score / active_vehicles)
+        if active_vehicles > 0:
+            fleet_health = round(score / active_vehicles)
 
-    db.close()
+        return {
 
-    return {
+            "fleetHealth": fleet_health,
 
-        "fleetHealth": fleet_health,
+            "activeVehicles": active_vehicles,
 
-        "activeVehicles": active_vehicles,
+            "telemetryRecords": telemetry_records,
 
-        "telemetryRecords": telemetry_records,
+            "criticalAlerts": critical_alerts,
 
-        "criticalAlerts": critical_alerts,
+            "warningAlerts": warning_alerts,
 
-        "warningAlerts": warning_alerts,
+            "averageTemperature": round(avg_temp or 0, 2),
 
-        "averageTemperature": round(avg_temp or 0, 2),
+            "highestTemperature": round(max_temp or 0, 2),
+        }
 
-        "highestTemperature": round(max_temp or 0, 2),
-    }
+    finally:
+        db.close()
