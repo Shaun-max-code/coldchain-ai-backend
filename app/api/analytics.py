@@ -10,5 +10,4 @@ router = APIRouter(
 
 @router.get("/")
 def analytics():
-
     return get_dashboard_stats()

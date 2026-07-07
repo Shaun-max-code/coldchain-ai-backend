@@ -6,7 +6,7 @@ from app.services.simulator import simulate
 
 router = APIRouter(
     prefix="/api/ai",
-    tags=["AI"]
+    tags=["AI"],
 )
 
 
@@ -17,13 +17,13 @@ def analyze(request: AIRequest):
 
     vehicle = next(
         (v for v in vehicles if v["id"] == request.vehicle_id),
-        None
+        None,
     )
 
     if vehicle is None:
         raise HTTPException(
             status_code=404,
-            detail="Vehicle not found"
+            detail="Vehicle not found",
         )
 
     return analyze_vehicle(vehicle)
