@@ -6,29 +6,54 @@ def check_alert(truck):
 
     db = SessionLocal()
 
-    if truck["temperature"] >= 8:
+    temp = truck["temperature"]
+
+    if temp < 6:
+        current_status = "SAFE"
+    elif temp < 8:
+        current_status = "WARNING"
+    else:
+        current_status = "CRITICAL"
+
+    previous_status = truck.get("status", "SAFE")
+
+    # Nothing changed
+    if current_status == previous_status:
+        db.close()
+        return
+
+    truck["status"] = current_status
+
+    if current_status == "SAFE":
 
         alert = Alert(
             vehicle_id=truck["id"],
             alert_type="Temperature",
-            severity="Critical",
-            temperature=truck["temperature"],
-            message=f'{truck["vehicle"]} exceeded safe temperature!'
+            severity="Recovered",
+            temperature=temp,
+            message=f'{truck["vehicle"]} temperature returned to normal.'
         )
 
-        db.add(alert)
-
-    elif truck["temperature"] >= 6:
+    elif current_status == "WARNING":
 
         alert = Alert(
             vehicle_id=truck["id"],
             alert_type="Temperature",
             severity="Warning",
-            temperature=truck["temperature"],
-            message=f'{truck["vehicle"]} temperature rising.'
+            temperature=temp,
+            message=f'{truck["vehicle"]} temperature is approaching the upper limit.'
         )
 
-        db.add(alert)
+    else:
 
+        alert = Alert(
+            vehicle_id=truck["id"],
+            alert_type="Temperature",
+            severity="Critical",
+            temperature=temp,
+            message=f'{truck["vehicle"]} exceeded the safe temperature limit!'
+        )
+
+    db.add(alert)
     db.commit()
     db.close()

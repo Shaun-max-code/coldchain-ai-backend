@@ -1,29 +1,27 @@
-from fastapi import APIRouter, HTTPException
-
-from app.schemas.ai import AIRequest
-from app.services.ai_service import analyze_vehicle
+from fastapi import APIRouter
 from app.services.simulator import simulate
 
 router = APIRouter(
-    prefix="/api/ai",
-    tags=["AI"]
+    prefix="/api/vehicles",
+    tags=["Vehicles"]
 )
 
-
-@router.post("/analyze")
-def analyze(request: AIRequest):
-
+@router.get("/")
+def get_vehicles():
     vehicles = simulate()
 
-    vehicle = next(
-        (v for v in vehicles if v["id"] == request.vehicle_id),
-        None
-    )
-
-    if vehicle is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Vehicle not found"
-        )
-
-    return analyze_vehicle(vehicle)
+    return [
+        {
+            "id": v["id"],
+            "vehicle": v["vehicle"],
+            "driver": v["driver"],
+            "temperature": v["temperature"],
+            "humidity": v["humidity"],
+            "speed": v["speed"],
+            "latitude": v["lat"],      # <-- FIX
+            "longitude": v["lon"], 
+             "status": v["status"],      # <-- FIX
+             "cargo": v["cargo"],
+        }
+        for v in vehicles
+    ]

@@ -4,9 +4,8 @@ from app.services.analytics_service import get_dashboard_stats
 
 router = APIRouter(
     prefix="/api/analytics",
-    tags=["Analytics"],
+    tags=["Analytics"]
 )
-
 
 @router.get("/")
 def analytics():
